@@ -17,7 +17,6 @@ describe('basic socket.io example', function() {
         // console.log('disconnected...');
         });
     });
-
     afterEach((done) => {
         // Cleanup
         if(socket.connected) {
@@ -26,56 +25,44 @@ describe('basic socket.io example', function() {
         io_server_main.close();
         done();
     });
-
-    test('should communicate',  async () => {
-        try {
-            io_server.emit('price', 'connected');
-            socket.on('price', (message) => {
-                expect(message).toBe('connected');
-            });
-        } catch (error) {
-            console.log(error)
+    expect.extend({
+        toBeValidDetails(recieved){
+            const isArray=recieved.isArray();
+            const hasFourCoins=(recieved.length==4)||false;
+            const keys=recieved.map((a)=>Object.keys(a));
+            const hasKeys=keys.some(key=>key==[
+                "symbol",
+                "priceChange",
+                "priceChangePercent",
+                "weightedAvgPrice",
+                "prevClosePrice",
+                "lastPrice",
+                "lastQty",
+                "bidPrice",
+                "bidQty",
+                "askPrice",
+                "askQty",
+                "openPrice",
+                "highPrice",
+                "lowPrice",
+                "volume",
+                "quoteVolume",
+                "openTime",
+                "closeTime",
+                "firstId",
+                "lastId",
+                "count"
+            ]);
+            const pass=hasKeys&&isArray&&hasFourCoins;
+            return pass; 
         }
-    });
-    test("check object contains all keys", async () => {
+    })
+    test('validate input coin details',  async () => {
         try {
             let coins=await axios.get('https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","ETHUSDT","ENJUSDT","GRTUSDT"]')
-            io_server.emit('check', coins.data[0]);
-            socket.on('check', (message) => {
-                console.log(message);
-                expect(message).objectContaining({
-                "symbol":expect.any(String),
-                "priceChange":expect.any(String),
-                "priceChangePercent":expect.any(String),
-                "weightedAvgPrice":expect.any(String),
-                "prevClosePrice":expect.any(String),
-                "lastPrice":expect.any(String),
-                "lastQty":expect.any(String),
-                "bidPrice":expect.any(String),
-                "bidQty":expect.any(String),
-                "askPrice":expect.any(String),
-                "askQty":expect.any(String),
-                "openPrice":expect.any(String),
-                "highPrice":expect.any(String),
-                "lowPrice":expect.any(String),
-                "volume":expect.any(String),
-                "quoteVolume":expect.any(String),
-                "openTime":expect.any(Number),
-                "closeTime":expect.any(Number),
-                "firstId":expect.any(Number),
-                "lastId":expect.any(Number),
-                "count":expect.any(Number)
-                });
-            });
-        } catch (error) {
-            console.log(error)
-        }
-        });
-    test('should have length 4',  async () => {
-        try {
-            io_server.emit('length', coins.data);
-            socket.on('length', (message) => {
-                expect(message).toHaveLength(4);
+            io_server.emit('price', coins.data);
+            socket.on('price', (message) => {
+                expect(message).toBeValidDetails();
             });
         } catch (error) {
             console.log(error)
